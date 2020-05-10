@@ -1,64 +1,86 @@
 package at.itproject.api;
 
 import at.itproject.core.ApiServiceImpl;
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/api/{ip}")
+import javax.annotation.PostConstruct;
+
+@Controller
 public class ApiController {
 
-    //@Autowired
-    //ApiServiceImpl apiService;
+    String ip;
+    String influxURL;
+    InfluxDB influxDB;
+    String databaseName;
+    String printjobUUID;
+    int timeoutCounter;
+    int maxTimeout;
 
-    @GetMapping("status")
-    @ResponseBody
-    public String printerStatus(@PathVariable String ip) {
-        ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getPrinterStatus(ip);
-        //apiService.getPrinterStatus(ip);
+    @Autowired
+    Environment environment;
+
+    @PostConstruct
+    public void init() {
+        ip = "192.168.0.1";
+        influxURL = environment.getProperty("influx.url");
+        databaseName = environment.getProperty("influx.name");
+        printjobUUID = "";
+        timeoutCounter = 20;
+
+        // init database
+        influxDB = InfluxDBFactory.connect(influxURL);
+        influxDB.query(new Query("CREATE DATABASE " + databaseName));
+        influxDB.setDatabase(databaseName);
+        influxDB.setLogLevel(InfluxDB.LogLevel.BASIC);
     }
 
-    @GetMapping("hotend-temperatures")
-    @ResponseBody
-    public String hotendTemperatures(@PathVariable String ip) {
+    //@Scheduled(fixedRate = 10000)
+    public void printerStatus() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getHotendTemperatures(ip);
+        apiService.writePrinterStatus(ip, influxDB);
+        // Close it if your application is terminating or you are not using it anymore.
+        //influxDB.close();
     }
 
-    @GetMapping("hot-time")
-    @ResponseBody
-    public String timeSpentHot(@PathVariable String ip) {
+    //@Scheduled(fixedRate = 10000)
+    public void hotendTemperatures() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getTimeSpentHot(ip);
+        apiService.writeHotendTemperatures(ip, influxDB, databaseName);
     }
 
-    @GetMapping("material-extruded")
-    @ResponseBody
-    public String materialExtruded(@PathVariable String ip) {
+    //@Scheduled(fixedRate = 10000)
+    public void timeSpentHot() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getMaterialExtruded(ip);
+        apiService.writeTimeSpentHot(ip, influxDB, databaseName);
     }
 
-    @GetMapping("printjob-history")
-    @ResponseBody
-    public String printjobHistory(@PathVariable String ip) {
+    @Scheduled(fixedRate = 10000)
+    public void materialExtruded() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getPrintJobHistory(ip);
+        apiService.writeMaterialExtruded(ip, influxDB, databaseName);
     }
 
-    @GetMapping("printjob-progress")
-    @ResponseBody
-    public String printjobProgress(@PathVariable String ip) {
-        ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getPrintJobProgress(ip);
+
+    //@Scheduled(fixedRate = 10000)
+    public void printjobHistory() {
+        if(printjobUUID.compareTo("")!=0){
+            ApiServiceImpl apiService=new ApiServiceImpl();
+            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout);
+        }
     }
 
-    @GetMapping("material-remaining")
-    @ResponseBody
-    public String materialRemaining(@PathVariable String ip) {
-        ApiServiceImpl apiService = new ApiServiceImpl();
-        return apiService.getMaterialRemaining(ip);
+    //@Scheduled(fixedRate = 10000)
+    public void printjobProgress() {
+        ApiServiceImpl apiService=new ApiServiceImpl();
+        String uuid = apiService.writePrintJobProgress(ip,influxDB);
+        if(printjobUUID.compareTo("")==0)
+            printjobUUID = uuid;
     }
 }
