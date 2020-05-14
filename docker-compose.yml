@@ -7,34 +7,6 @@ services:
       - 8080
     restart: always
 
-  telegraf:
-    image: telegraf:1.12.5
-    networks:
-      - default
-      - influxdb
-    volumes:
-      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
-    restart: always
-
-
-    influxdb:
-      image: influxdb:latest
-      environment:
-        - INFLUXDB_DB=ultimaker
-      ports:
-        - "8083:8083"
-        - "8086:8086"
-
-    grafana:
-      image: grafana/grafana:latest
-      ports:
-        - "5000:3000"
-      links:
-        - influxdb
-networks:
-  influxdb:
-    external:
-      name: influxdb
 
 
 

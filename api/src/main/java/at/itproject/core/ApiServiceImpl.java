@@ -281,7 +281,7 @@ public class ApiServiceImpl {
        // */
     }
 
-    public int  writePrintJobHistory(String ip,InfluxDB influxDB,String printjobUUID, int timeoutCounter, int maxTimeout) {
+    public int  writePrintJobHistory(String ip,InfluxDB influxDB,String printjobUUID, int timeoutCounter, int maxTimeout, String schedulerURL, String containerID, String userID) {
 
         String id=ip.split("\\.")[3];
         HistoryApi historyApi=new HistoryApi();
@@ -304,10 +304,12 @@ public class ApiServiceImpl {
                             .addField("uuid",uuid)
                             .build());
 
-                    // send printjob history
+
+                   // TODO: add printerIP and userID to history
                     restTemplate.postForLocation("http://localhost:8080/ultimaker/history", history);
 
-                    // TODO: shutdown docker container
+                    // stop container
+                    restTemplate.postForLocation(schedulerURL + "/api/v1/stop", containerID);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -316,7 +318,9 @@ public class ApiServiceImpl {
         else {
             timeoutCounter++;
             if(timeoutCounter > maxTimeout) {
-                // TODO: send error report and shutdown docker container
+                // TODO: send error report
+                // stop container
+                restTemplate.postForLocation(schedulerURL + "/api/v1/stop", containerID);
             }
         }
 

@@ -17,9 +17,12 @@ public class ApiController {
 
     String ip;
     String influxURL;
+    String schedulerURL;
     InfluxDB influxDB;
     String databaseName;
     String printjobUUID;
+    String containerID;
+    String userID;
     int timeoutCounter;
     int maxTimeout;
 
@@ -28,9 +31,13 @@ public class ApiController {
 
     @PostConstruct
     public void init() {
-        ip = "192.168.0.1";
+        //ip = "192.168.0.1";
         influxURL = environment.getProperty("influx.url");
+        ip = System.getenv("printerIP");
+        containerID = System.getenv("containerID");
+        userID = System.getenv("userID");
         databaseName = environment.getProperty("influx.name");
+        schedulerURL = environment.getProperty("scheduler.url");
         printjobUUID = "";
         timeoutCounter = 20;
 
@@ -72,7 +79,7 @@ public class ApiController {
     public void printjobHistory() {
         if(printjobUUID.compareTo("")!=0){
             ApiServiceImpl apiService=new ApiServiceImpl();
-            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout);
+            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout, schedulerURL, containerID, userID);
         }
     }
 

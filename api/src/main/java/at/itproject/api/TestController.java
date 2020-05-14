@@ -9,10 +9,10 @@ import java.io.IOException;
 @RequestMapping("/api/test")
 public class TestController {
 
-    @RequestMapping(value="", consumes= "text/plain", method= RequestMethod.POST)
-    public void addReservation(@RequestBody String reservation) throws IOException {
+    @RequestMapping(value="/history", consumes= "application/json", method= RequestMethod.POST)
+    public void postHistory(@RequestBody String history) throws IOException {
         try {
-            System.out.println(reservation);
+            System.out.println(history);
         }
         catch(Exception e) {
             e.printStackTrace();

@@ -1,8 +1,8 @@
 FROM openjdk:11
 
-COPY . /usr/app
-
 WORKDIR /usr/app
+
+COPY . /usr/app
 
 RUN ./mvnw package -Dmaven.javadoc.skip=true -DskipTests verify
 
