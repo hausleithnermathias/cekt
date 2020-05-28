@@ -18,6 +18,7 @@ public class ApiController {
     String ip;
     String influxURL;
     String schedulerURL;
+    String managementToolURL;
     InfluxDB influxDB;
     String databaseName;
     String printjobUUID;
@@ -32,12 +33,15 @@ public class ApiController {
     @PostConstruct
     public void init() {
         //ip = "192.168.0.1";
-        influxURL = environment.getProperty("influx.url");
+
         ip = System.getenv("printerIP");
         containerID = System.getenv("containerID");
         userID = System.getenv("userID");
+
+        influxURL = environment.getProperty("influx.url");
         databaseName = environment.getProperty("influx.name");
         schedulerURL = environment.getProperty("scheduler.url");
+        managementToolURL = environment.getProperty("managementTool.url");
         printjobUUID = "";
         timeoutCounter = 20;
 
@@ -48,7 +52,7 @@ public class ApiController {
         influxDB.setLogLevel(InfluxDB.LogLevel.BASIC);
     }
 
-    //@Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 20000)
     public void printerStatus() {
         ApiServiceImpl apiService = new ApiServiceImpl();
         apiService.writePrinterStatus(ip, influxDB);
@@ -56,34 +60,34 @@ public class ApiController {
         //influxDB.close();
     }
 
-    //@Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 60000)
     public void hotendTemperatures() {
         ApiServiceImpl apiService = new ApiServiceImpl();
         apiService.writeHotendTemperatures(ip, influxDB, databaseName);
     }
 
-    //@Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 70000)
     public void timeSpentHot() {
         ApiServiceImpl apiService = new ApiServiceImpl();
         apiService.writeTimeSpentHot(ip, influxDB, databaseName);
     }
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 80000)
     public void materialExtruded() {
         ApiServiceImpl apiService = new ApiServiceImpl();
         apiService.writeMaterialExtruded(ip, influxDB, databaseName);
     }
 
 
-    //@Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 90000)
     public void printjobHistory() {
         if(printjobUUID.compareTo("")!=0){
             ApiServiceImpl apiService=new ApiServiceImpl();
-            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout, schedulerURL, containerID, userID);
+            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout, managementToolURL, schedulerURL, containerID, userID);
         }
     }
 
-    //@Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 100000)
     public void printjobProgress() {
         ApiServiceImpl apiService=new ApiServiceImpl();
         String uuid = apiService.writePrintJobProgress(ip,influxDB);
