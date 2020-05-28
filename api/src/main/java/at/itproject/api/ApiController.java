@@ -9,7 +9,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.PostConstruct;
 
 @Controller
@@ -33,14 +32,13 @@ public class ApiController {
     @PostConstruct
     public void init() {
         //ip = "192.168.0.1";
-
         ip = System.getenv("printerIP");
         containerID = System.getenv("containerID");
         userID = System.getenv("userID");
+        schedulerURL = System.getenv("schedulerIP");
 
         influxURL = environment.getProperty("influx.url");
         databaseName = environment.getProperty("influx.name");
-        schedulerURL = environment.getProperty("scheduler.url");
         managementToolURL = environment.getProperty("managementTool.url");
         printjobUUID = "";
         timeoutCounter = 20;

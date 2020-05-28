@@ -54,6 +54,7 @@ public class ApiServiceImpl {
         printerApi.getApiClient().setBasePath(basepath+ip+"/api/v1");
         String status;
 
+
         if(pingHost(ip,500)){
             try {
                 status=printerApi.printerStatusGet();
@@ -74,17 +75,6 @@ public class ApiServiceImpl {
                 .addField("status",status)
                 .build());
 
-        /* Testdata
-        String status = "Idle";
-        // Write points to InfluxDB.
-        influxDB.write(Point.measurement("printer_status")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("weekday", strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1])
-                .tag("month", strMonths[calendar.get(Calendar.MONTH)])
-                .tag("year", String.valueOf(calendar.get(Calendar.YEAR)))
-                .addField("status", status)
-                .build());
-                */
     }
 
     public void writeHotendTemperatures(String ip,InfluxDB influxDB,String databaseName) {
@@ -122,27 +112,6 @@ public class ApiServiceImpl {
             }
         }
 
-        /* Testdata
-        Point point = Point.measurement("temperature_hotend")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer", id)
-                .tag("extruder",String.valueOf(i++))
-                .tag("nozzleType", "A1")
-                .addField("temperature", "123")
-                .build();
-        batchPoints.point(point);
-
-        point = Point.measurement("temperature_hotend")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer", id)
-                .tag("extruder",String.valueOf(i++))
-                .tag("nozzleType", "A1")
-                .addField("temperature", "127")
-                .build();
-        batchPoints.point(point);
-
-        influxDB.write(batchPoints);
-        */
     }
 
     public void writeTimeSpentHot(String ip,InfluxDB influxDB,String databaseName) {
@@ -182,34 +151,6 @@ public class ApiServiceImpl {
             }
         }
 
-        /* Testdata
-        Point point = Point.measurement("time_spent_hot")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer", id)
-                .tag("extruder",String.valueOf(i++))
-                .tag("nozzleType", "A1")
-                .tag("weekday", strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1])
-                .tag("month", strMonths[calendar.get(Calendar.MONTH)])
-                .tag("year", String.valueOf(calendar.get(Calendar.YEAR)))
-                .addField("time-spent-hot", 122334434)
-                .build();
-        batchPoints.point(point);
-
-        point = Point.measurement("time_spent_hot")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer", id)
-                .tag("extruder",String.valueOf(i++))
-                .tag("nozzleType", "A1")
-                .tag("weekday", strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1])
-                .tag("month", strMonths[calendar.get(Calendar.MONTH)])
-                .tag("year", String.valueOf(calendar.get(Calendar.YEAR)))
-                .addField("time-spent-hot", 45466)
-                .build();
-        batchPoints.point(point);
-
-        influxDB.write(batchPoints);
-
-         */
     }
 
 
@@ -223,7 +164,7 @@ public class ApiServiceImpl {
                 .database(databaseName)
                 //.retentionPolicy("defaultPolicy")
                 .build();
-/*
+
         if(pingHost(ip,500)){
             heads=getHead(printerApi);
             try {
@@ -250,38 +191,9 @@ public class ApiServiceImpl {
             }
         }
 
-        */
-        ///*Testdata
-        Point point = Point.measurement("material_extruded")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer", id)
-                .tag("extruder",String.valueOf(i++))
-                .tag("nozzleType", "A1")
-                .tag("weekday", strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1])
-                .tag("month", strMonths[calendar.get(Calendar.MONTH)])
-                .tag("year", String.valueOf(calendar.get(Calendar.YEAR)))
-                .addField("material-extruded", 34446466)
-                .build();
-        batchPoints.point(point);
-
-        point = Point.measurement("material_extruded")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer", id)
-                .tag("extruder",String.valueOf(i++))
-                .tag("nozzleType", "A1")
-                .tag("weekday", strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1])
-                .tag("month", strMonths[calendar.get(Calendar.MONTH)])
-                .tag("year", String.valueOf(calendar.get(Calendar.YEAR)))
-                .addField("material-extruded", 122434)
-                .build();
-        batchPoints.point(point);
-
-        influxDB.write(batchPoints);
-
-       // */
     }
 
-    public int  writePrintJobHistory(String ip,InfluxDB influxDB,String printjobUUID, int timeoutCounter, int maxTimeout, String schedulerURL, String containerID, String userID) {
+    public int  writePrintJobHistory(String ip,InfluxDB influxDB,String printjobUUID, int timeoutCounter, int maxTimeout, String schedulerURL, String managementToolURL, String containerID, String userID) {
 
         String id=ip.split("\\.")[3];
         HistoryApi historyApi=new HistoryApi();
@@ -304,40 +216,30 @@ public class ApiServiceImpl {
                             .addField("uuid",uuid)
                             .build());
 
-
                    // TODO: add printerIP and userID to history
+                    //restTemplate.postForLocation(managementToolURL, history);
                     restTemplate.postForLocation("http://localhost:8080/ultimaker/history", history);
 
                     // stop container
-                    restTemplate.postForLocation(schedulerURL + "/api/v1/stop", containerID);
+                    restTemplate.postForLocation("http://" + schedulerURL + ":8081/api/v1/stop", containerID);
                 }
             } catch (Exception e) {
+                timeoutCounter++;
+                if(timeoutCounter > maxTimeout) {
+                    restTemplate.postForLocation("http://" + schedulerURL + ":8081/api/v1/stop", containerID);
+                }
                 e.printStackTrace();
             }
         }
         else {
             timeoutCounter++;
             if(timeoutCounter > maxTimeout) {
-                // TODO: send error report
                 // stop container
-                restTemplate.postForLocation(schedulerURL + "/api/v1/stop", containerID);
+                restTemplate.postForLocation("http://" + schedulerURL + ":8081/api/v1/stop", containerID);
             }
         }
 
         return timeoutCounter;
-
-        /* Testdata
-        influxDB.write(Point.measurement("printjob_history")
-                        .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                        .tag("result", "Finished")
-                        .tag("printer",id)
-                        .tag("weekday", strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1])
-                        .tag("month", strMonths[calendar.get(Calendar.MONTH)])
-                        .tag("year", String.valueOf(calendar.get(Calendar.YEAR)))
-                        .addField("uuid", "1233455466")
-                        .build());
-
-         */
 
     }
 
@@ -373,15 +275,6 @@ public class ApiServiceImpl {
 
         return "";
 
-        /* Testdata
-        influxDB.write(Point.measurement("printjob_progress")
-                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                .tag("printer",id)
-                .tag("jobname","Testdruck")
-                .addField("progress", 97)
-                .build());
-
-         */
     }
 
     private List<Head> getHead(PrinterApi printerApi) {
