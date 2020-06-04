@@ -1,6 +1,7 @@
 package at.itproject.api;
 
 import at.itproject.core.ApiServiceImpl;
+import io.swagger.client.ApiException;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
@@ -16,13 +17,13 @@ public class ApiController {
 
     String ip;
     String influxURL;
-    String schedulerURL;
-    String managementToolURL;
+    String schedulerIp;
+    String managementToolApi;
     InfluxDB influxDB;
     String databaseName;
     String printjobUUID;
     String containerID;
-    String userID;
+    String referenceID;
     int timeoutCounter;
     int maxTimeout;
 
@@ -31,15 +32,16 @@ public class ApiController {
 
     @PostConstruct
     public void init() {
+
         //ip = "192.168.0.1";
         ip = System.getenv("printerIP");
         containerID = System.getenv("containerID");
-        userID = System.getenv("userID");
-        schedulerURL = System.getenv("schedulerIP");
+        referenceID = System.getenv("userID");
+        schedulerIp = System.getenv("schedulerIP");
 
         influxURL = "http://localhost:8086";
         databaseName = "ultimaker";
-        managementToolURL = "http://localhost:8080";
+        managementToolApi = "localhost:8080";
         printjobUUID = "";
         timeoutCounter = 20;
 
@@ -48,6 +50,7 @@ public class ApiController {
         influxDB.query(new Query("CREATE DATABASE " + databaseName));
         influxDB.setDatabase(databaseName);
         influxDB.setLogLevel(InfluxDB.LogLevel.BASIC);
+
     }
 
     @Scheduled(fixedRate = 20000)
@@ -61,7 +64,7 @@ public class ApiController {
     @Scheduled(fixedRate = 60000)
     public void hotendTemperatures() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        apiService.writeHotendTemperatures(ip, influxDB, databaseName);
+        apiService.writeHotendTemperatures(ip, influxDB, databaseName, timeoutCounter,maxTimeout, managementToolApi, schedulerIp, containerID, referenceID);
     }
 
     @Scheduled(fixedRate = 70000)
@@ -81,7 +84,7 @@ public class ApiController {
     public void printjobHistory() {
         if(printjobUUID.compareTo("")!=0){
             ApiServiceImpl apiService=new ApiServiceImpl();
-            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout, managementToolURL, schedulerURL, containerID, userID);
+            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout, managementToolApi, schedulerIp, containerID, referenceID);
         }
     }
 
@@ -92,4 +95,5 @@ public class ApiController {
         if(printjobUUID.compareTo("")==0)
             printjobUUID = uuid;
     }
+
 }

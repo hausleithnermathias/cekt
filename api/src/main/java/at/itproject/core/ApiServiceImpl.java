@@ -5,6 +5,7 @@ import io.swagger.client.api.HistoryApi;
 import io.swagger.client.api.PrintJobApi;
 import io.swagger.client.api.PrinterApi;
 import io.swagger.client.model.Head;
+import io.swagger.client.model.PrintJob;
 import io.swagger.client.model.PrintJobHistory;
 import okhttp3.OkHttpClient;
 import org.influxdb.BatchOptions;
@@ -33,7 +34,7 @@ public class ApiServiceImpl {
             "April","May","June","July","August","September","October","November","December"};
     //@Value("${spring.data.rest.base-path}")
     private String basepath="http://";
-    RestTemplate restTemplate;
+    RestTemplate restTemplate = new RestTemplate();
 
     private int i=1;
 
@@ -77,7 +78,7 @@ public class ApiServiceImpl {
 
     }
 
-    public void writeHotendTemperatures(String ip,InfluxDB influxDB,String databaseName) {
+    public int writeHotendTemperatures(String ip,InfluxDB influxDB,String databaseName, int timeoutCounter, int maxTimeout, String schedulerIp, String managementToolApi, String containerID, String userID) {
 
         String id=ip.split("\\.")[3];
         PrinterApi printerApi=new PrinterApi();
@@ -111,6 +112,20 @@ public class ApiServiceImpl {
                 e.printStackTrace();
             }
         }
+
+        else {
+            timeoutCounter++;
+            if(timeoutCounter > maxTimeout) {
+                // send Timout report
+                PrintJobTimout printJobTimout = new PrintJobTimout();
+                printJobTimout.setReferenceId(userID);
+                restTemplate.postForLocation("http://" + managementToolApi, printJobTimout);
+                // stop container
+                restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
+            }
+        }
+
+        return timeoutCounter;
 
     }
 
@@ -193,7 +208,7 @@ public class ApiServiceImpl {
 
     }
 
-    public int  writePrintJobHistory(String ip,InfluxDB influxDB,String printjobUUID, int timeoutCounter, int maxTimeout, String schedulerURL, String managementToolURL, String containerID, String userID) {
+    public int  writePrintJobHistory(String ip,InfluxDB influxDB,String printjobUUID, int timeoutCounter, int maxTimeout, String schedulerIp, String managementToolApi, String containerID, String userID) {
 
         String id=ip.split("\\.")[3];
         HistoryApi historyApi=new HistoryApi();
@@ -216,17 +231,22 @@ public class ApiServiceImpl {
                             .addField("uuid",uuid)
                             .build());
 
-                   // TODO: add printerIP and userID to history
-                    //restTemplate.postForLocation(managementToolURL, history);
-                    restTemplate.postForLocation("http://localhost:8080/ultimaker/history", history);
+                    // send history
+                    history.setReferenceId(userID);
+                    restTemplate.postForLocation("http://" + managementToolApi, history);
 
                     // stop container
-                    restTemplate.postForLocation("http://" + schedulerURL + ":8081/api/v1/stop", containerID);
+                    restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
                 }
             } catch (Exception e) {
                 timeoutCounter++;
                 if(timeoutCounter > maxTimeout) {
-                    restTemplate.postForLocation("http://" + schedulerURL + ":8081/api/v1/stop", containerID);
+                    // send Timout report
+                    PrintJobTimout printJobTimout = new PrintJobTimout();
+                    printJobTimout.setReferenceId(userID);
+                    restTemplate.postForLocation("http://" + managementToolApi, printJobTimout);
+                    // stop container
+                    restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
                 }
                 e.printStackTrace();
             }
@@ -234,8 +254,12 @@ public class ApiServiceImpl {
         else {
             timeoutCounter++;
             if(timeoutCounter > maxTimeout) {
+                // send Timout report
+                PrintJobTimout printJobTimout = new PrintJobTimout();
+                printJobTimout.setReferenceId(userID);
+                restTemplate.postForLocation("http://" + managementToolApi, printJobTimout);
                 // stop container
-                restTemplate.postForLocation("http://" + schedulerURL + ":8081/api/v1/stop", containerID);
+                restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
             }
         }
 
@@ -272,6 +296,7 @@ public class ApiServiceImpl {
                 e.printStackTrace();
             }
         }
+
 
         return "";
 

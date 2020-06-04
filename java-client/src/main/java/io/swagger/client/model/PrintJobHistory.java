@@ -30,6 +30,9 @@ import org.threeten.bp.OffsetDateTime;
  */
 @ApiModel(description = "A print job in the past.")
 public class PrintJobHistory {
+  @SerializedName("referenceId")
+  private String referenceId = null;
+
   @SerializedName("time_elapsed")
   private Double timeElapsed = null;
 
@@ -308,6 +311,14 @@ public class PrintJobHistory {
     this.uuid = uuid;
   }
 
+  /**
+   * Get uuid
+   * @return referenceId
+   **/
+  @ApiModelProperty(value = "")
+  public String getReferenceId() {return referenceId; }
+
+  public void setReferenceId(String referenceId) {this.referenceId = referenceId; }
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -353,6 +364,7 @@ public class PrintJobHistory {
     sb.append("    reprintOriginalUuid: ").append(toIndentedString(reprintOriginalUuid)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    uuid: ").append(toIndentedString(uuid)).append("\n");
+    sb.append("    referenceId: ").append(toIndentedString(referenceId)).append("\n");
     sb.append("}");
     return sb.toString();
   }
