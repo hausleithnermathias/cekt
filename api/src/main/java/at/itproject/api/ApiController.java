@@ -37,9 +37,9 @@ public class ApiController {
         userID = System.getenv("userID");
         schedulerURL = System.getenv("schedulerIP");
 
-        influxURL = environment.getProperty("influx.url");
-        databaseName = environment.getProperty("influx.name");
-        managementToolURL = environment.getProperty("managementTool.url");
+        influxURL = "http://localhost:8086";
+        databaseName = "ultimaker";
+        managementToolURL = "http://localhost:8080";
         printjobUUID = "";
         timeoutCounter = 20;
 
