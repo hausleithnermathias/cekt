@@ -119,7 +119,7 @@ public class ApiServiceImpl {
                 // send Timout report
                 PrintJobTimout printJobTimout = new PrintJobTimout();
                 printJobTimout.setReferenceId(userID);
-                restTemplate.postForLocation("http://" + managementToolApi, printJobTimout);
+                restTemplate.postForLocation("https://" + managementToolApi, printJobTimout);
                 // stop container
                 restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
             }
@@ -217,6 +217,7 @@ public class ApiServiceImpl {
         if(pingHost(ip,500)){
             try {
                 PrintJobHistory history=historyApi.historyPrintJobsGet(BigDecimal.valueOf(0),BigDecimal.valueOf(1)).iterator().next();
+                Message message = new Message();
                 String uuid=history.getUuid();
                 String result=history.getResult().toString();
                 if(uuid.compareTo(printjobUUID) == 0){
@@ -232,8 +233,9 @@ public class ApiServiceImpl {
                             .build());
 
                     // send history
-                    history.setReferenceId(userID);
-                    restTemplate.postForLocation("http://" + managementToolApi, history);
+                    message.setReferenceId(userID);
+                    message.setPrintJobHistory(history);
+                    restTemplate.postForLocation("https://" + managementToolApi, message);
 
                     // stop container
                     restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
@@ -244,7 +246,7 @@ public class ApiServiceImpl {
                     // send Timout report
                     PrintJobTimout printJobTimout = new PrintJobTimout();
                     printJobTimout.setReferenceId(userID);
-                    restTemplate.postForLocation("http://" + managementToolApi, printJobTimout);
+                    restTemplate.postForLocation("https://" + managementToolApi, printJobTimout);
                     // stop container
                     restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
                 }
@@ -257,7 +259,7 @@ public class ApiServiceImpl {
                 // send Timout report
                 PrintJobTimout printJobTimout = new PrintJobTimout();
                 printJobTimout.setReferenceId(userID);
-                restTemplate.postForLocation("http://" + managementToolApi, printJobTimout);
+                restTemplate.postForLocation("https://" + managementToolApi, printJobTimout);
                 // stop container
                 restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
             }

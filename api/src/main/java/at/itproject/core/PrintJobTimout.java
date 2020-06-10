@@ -8,7 +8,7 @@ public class PrintJobTimout {
     @SerializedName("referenceId")
     private String referenceId = null;
 
-    @SerializedName("referenceId")
+    @SerializedName("errorMessage")
     private String message = "Printer is not reachable anymore. Container killed !";
 
     /**

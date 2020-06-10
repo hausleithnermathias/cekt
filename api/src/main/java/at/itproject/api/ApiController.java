@@ -7,9 +7,12 @@ import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+
 import javax.annotation.PostConstruct;
 
 @Controller
@@ -33,19 +36,18 @@ public class ApiController {
     @PostConstruct
     public void init() {
 
-        //ip = "192.168.0.1";
         ip = System.getenv("printerIP");
         containerID = System.getenv("containerID");
         referenceID = System.getenv("userID");
         schedulerIp = System.getenv("schedulerIP");
 
-        influxURL = "http://localhost:8086";
+        influxURL = "http://influxdb:8086";
         databaseName = "ultimaker";
-        managementToolApi = "localhost:8080";
+        managementToolApi = "connector.grandgarage.eu/api/add-metadata";
         printjobUUID = "";
         timeoutCounter = 20;
 
-        // init database
+        // init databases
         influxDB = InfluxDBFactory.connect(influxURL);
         influxDB.query(new Query("CREATE DATABASE " + databaseName));
         influxDB.setDatabase(databaseName);
@@ -78,7 +80,6 @@ public class ApiController {
         ApiServiceImpl apiService = new ApiServiceImpl();
         apiService.writeMaterialExtruded(ip, influxDB, databaseName);
     }
-
 
     @Scheduled(fixedRate = 90000)
     public void printjobHistory() {
