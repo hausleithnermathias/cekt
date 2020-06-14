@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 public class ApiController {
@@ -41,17 +42,28 @@ public class ApiController {
         referenceID = System.getenv("userID");
         schedulerIp = System.getenv("schedulerIP");
 
+        System.out.println("scheduler:" + schedulerIp);
+        System.out.println("container:" + containerID);
+        System.out.println("reference:" + referenceID);
+
         influxURL = "http://influxdb:8086";
         databaseName = "ultimaker";
         managementToolApi = "connector.grandgarage.eu/api/add-metadata";
         printjobUUID = "";
-        timeoutCounter = 20;
+        timeoutCounter = 0;
+        maxTimeout = 3;
 
         // init databases
         influxDB = InfluxDBFactory.connect(influxURL);
         influxDB.query(new Query("CREATE DATABASE " + databaseName));
         influxDB.setDatabase(databaseName);
         influxDB.setLogLevel(InfluxDB.LogLevel.BASIC);
+
+        try {
+            TimeUnit.SECONDS.sleep(60);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -66,7 +78,7 @@ public class ApiController {
     @Scheduled(fixedRate = 60000)
     public void hotendTemperatures() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        apiService.writeHotendTemperatures(ip, influxDB, databaseName, timeoutCounter,maxTimeout, managementToolApi, schedulerIp, containerID, referenceID);
+        timeoutCounter = apiService.writeHotendTemperatures(ip, influxDB, databaseName, timeoutCounter,maxTimeout, managementToolApi, schedulerIp, containerID, referenceID);
     }
 
     @Scheduled(fixedRate = 70000)
@@ -96,5 +108,6 @@ public class ApiController {
         if(printjobUUID.compareTo("")==0)
             printjobUUID = uuid;
     }
+
 
 }

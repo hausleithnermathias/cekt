@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 @Service
 public class ApiServiceImpl {
 
+
     private Calendar calendar=Calendar.getInstance();
     String[] strDays=new String[]{"Sunday","Monday","Tuesday",
             "Wednesday","Thursday","Friday","Saturday"};
@@ -79,7 +80,7 @@ public class ApiServiceImpl {
     }
 
     public int writeHotendTemperatures(String ip,InfluxDB influxDB,String databaseName, int timeoutCounter, int maxTimeout, String schedulerIp, String managementToolApi, String containerID, String userID) {
-
+        System.out.println(timeoutCounter);
         String id=ip.split("\\.")[3];
         PrinterApi printerApi=new PrinterApi();
         printerApi.getApiClient().setBasePath(basepath+ip+"/api/v1");
@@ -115,14 +116,16 @@ public class ApiServiceImpl {
 
         else {
             timeoutCounter++;
-            if(timeoutCounter > maxTimeout) {
-                // send Timout report
-                PrintJobTimout printJobTimout = new PrintJobTimout();
-                printJobTimout.setReferenceId(userID);
-                restTemplate.postForLocation("https://" + managementToolApi, printJobTimout);
-                // stop container
-                restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
-            }
+            // if(timeoutCounter > maxTimeout) {
+            // send Timout report
+            System.out.println("shutdown timeout");
+            PrintJobTimout printJobTimout = new PrintJobTimout();
+            printJobTimout.setReferenceId(userID);
+            restTemplate.postForLocation("https://connector.grandgarage.eu/api/add-metadata", printJobTimout);
+            // stop container
+            System.out.println("shutdown url:" + "http://" + schedulerIp + ":8081/api/v1/stop");
+            restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
+            // }
         }
 
         return timeoutCounter;
@@ -235,34 +238,35 @@ public class ApiServiceImpl {
                     // send history
                     message.setReferenceId(userID);
                     message.setPrintJobHistory(history);
-                    restTemplate.postForLocation("https://" + managementToolApi, message);
+                    restTemplate.postForLocation("https://connector.grandgarage.eu/api/add-metadata", message);
 
                     // stop container
-                    restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
+                    System.out.println("shutdown finish");
+                    restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
                 }
             } catch (Exception e) {
                 timeoutCounter++;
-                if(timeoutCounter > maxTimeout) {
-                    // send Timout report
-                    PrintJobTimout printJobTimout = new PrintJobTimout();
-                    printJobTimout.setReferenceId(userID);
-                    restTemplate.postForLocation("https://" + managementToolApi, printJobTimout);
-                    // stop container
-                    restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
-                }
+                // if(timeoutCounter > maxTimeout) {
+                // send Timout report
+                PrintJobTimout printJobTimout = new PrintJobTimout();
+                printJobTimout.setReferenceId(userID);
+                restTemplate.postForLocation("https://connector.grandgarage.eu/api/add-metadata", printJobTimout);
+                // stop container
+                restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
+                //  }
                 e.printStackTrace();
             }
         }
         else {
             timeoutCounter++;
-            if(timeoutCounter > maxTimeout) {
-                // send Timout report
-                PrintJobTimout printJobTimout = new PrintJobTimout();
-                printJobTimout.setReferenceId(userID);
-                restTemplate.postForLocation("https://" + managementToolApi, printJobTimout);
-                // stop container
-                restTemplate.postForLocation("http://" + schedulerIp + ":8081/api/v1/stop", containerID);
-            }
+            //  if(timeoutCounter > maxTimeout) {
+            // send Timout report
+            PrintJobTimout printJobTimout = new PrintJobTimout();
+            printJobTimout.setReferenceId(userID);
+            restTemplate.postForLocation("https://connector.grandgarage.eu/api/add-metadata", printJobTimout);
+            // stop container
+            restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
+            //  }
         }
 
         return timeoutCounter;
@@ -312,4 +316,5 @@ public class ApiServiceImpl {
             return null;
         }
     }
+
 }
