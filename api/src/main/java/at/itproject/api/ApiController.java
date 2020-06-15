@@ -1,6 +1,7 @@
 package at.itproject.api;
 
 import at.itproject.core.ApiServiceImpl;
+import at.itproject.core.PrintJobTimout;
 import io.swagger.client.ApiException;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -42,16 +43,16 @@ public class ApiController {
         referenceID = System.getenv("userID");
         schedulerIp = System.getenv("schedulerIP");
 
-        System.out.println("scheduler:" + schedulerIp);
-        System.out.println("container:" + containerID);
-        System.out.println("reference:" + referenceID);
+        //System.out.println("scheduler:" + schedulerIp);
+        //System.out.println("container:" + containerID);
+        //System.out.println("reference:" + referenceID);
 
         influxURL = "http://influxdb:8086";
         databaseName = "ultimaker";
         managementToolApi = "connector.grandgarage.eu/api/add-metadata";
         printjobUUID = "";
         timeoutCounter = 0;
-        maxTimeout = 3;
+        maxTimeout = 5;
 
         // init databases
         influxDB = InfluxDBFactory.connect(influxURL);
@@ -71,14 +72,26 @@ public class ApiController {
     public void printerStatus() {
         ApiServiceImpl apiService = new ApiServiceImpl();
         apiService.writePrinterStatus(ip, influxDB);
-        // Close it if your application is terminating or you are not using it anymore.
-        //influxDB.close();
     }
 
     @Scheduled(fixedRate = 60000)
     public void hotendTemperatures() {
         ApiServiceImpl apiService = new ApiServiceImpl();
-        timeoutCounter = apiService.writeHotendTemperatures(ip, influxDB, databaseName, timeoutCounter,maxTimeout, managementToolApi, schedulerIp, containerID, referenceID);
+        if(apiService.writeHotendTemperatures(ip, influxDB, databaseName)) {
+            timeoutCounter = 0;
+        }
+        else {
+            timeoutCounter++;
+            if(timeoutCounter >= maxTimeout) {
+                RestTemplate restTemplate = new RestTemplate();
+                PrintJobTimout printJobTimout = new PrintJobTimout();
+                printJobTimout.setReferenceId(referenceID);
+
+                // send timeout message
+                restTemplate.postForLocation("https://connector.grandgarage.eu/api/add-metadata", printJobTimout);
+            }
+        }
+
     }
 
     @Scheduled(fixedRate = 70000)
@@ -97,15 +110,15 @@ public class ApiController {
     public void printjobHistory() {
         if(printjobUUID.compareTo("")!=0){
             ApiServiceImpl apiService=new ApiServiceImpl();
-            timeoutCounter = apiService.writePrintJobHistory(ip,influxDB,printjobUUID,timeoutCounter,maxTimeout, managementToolApi, schedulerIp, containerID, referenceID);
+            apiService.writePrintJobHistory(ip,influxDB,printjobUUID, containerID, referenceID);
         }
     }
 
-    @Scheduled(fixedRate = 100000)
+    @Scheduled(fixedRate = 30000)
     public void printjobProgress() {
         ApiServiceImpl apiService=new ApiServiceImpl();
         String uuid = apiService.writePrintJobProgress(ip,influxDB);
-        if(printjobUUID.compareTo("")==0)
+        if(printjobUUID.compareTo("")==0 && uuid.compareTo("")!=0)
             printjobUUID = uuid;
     }
 
