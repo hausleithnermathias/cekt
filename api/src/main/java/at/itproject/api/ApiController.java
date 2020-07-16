@@ -13,9 +13,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
-import java.util.concurrent.TimeUnit;
 
 @Controller
 public class ApiController {
@@ -37,7 +37,6 @@ public class ApiController {
 
     @PostConstruct
     public void init() {
-
         ip = System.getenv("printerIP");
         containerID = System.getenv("containerID");
         referenceID = System.getenv("userID");
@@ -47,7 +46,8 @@ public class ApiController {
         //System.out.println("container:" + containerID);
         //System.out.println("reference:" + referenceID);
 
-        influxURL = "http://influxdb:8086";
+        //influxURL = "http://10.0.0.42:8086";
+        influxURL = "http://localhost:8086";
         databaseName = "ultimaker";
         managementToolApi = "connector.grandgarage.eu/api/add-metadata";
         printjobUUID = "";
@@ -121,6 +121,5 @@ public class ApiController {
         if(printjobUUID.compareTo("")==0 && uuid.compareTo("")!=0)
             printjobUUID = uuid;
     }
-
 
 }

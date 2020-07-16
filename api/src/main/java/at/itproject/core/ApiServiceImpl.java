@@ -5,24 +5,18 @@ import io.swagger.client.api.HistoryApi;
 import io.swagger.client.api.PrintJobApi;
 import io.swagger.client.api.PrinterApi;
 import io.swagger.client.model.Head;
-import io.swagger.client.model.PrintJob;
 import io.swagger.client.model.PrintJobHistory;
-import okhttp3.OkHttpClient;
-import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
-import org.influxdb.dto.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.influxdb.dto.BatchPoints;
+import org.influxdb.dto.Point;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 public class ApiServiceImpl {
@@ -114,7 +108,7 @@ public class ApiServiceImpl {
         }
 
         else {
-           return false;
+            return false;
         }
 
         return true;
@@ -231,7 +225,9 @@ public class ApiServiceImpl {
 
                     // stop container
                     //System.out.println("shutdown finish");
-                    restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
+                    //restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
+                    restTemplate.postForLocation("http://10.5.1.155:8081/api/v1/stop", containerID);
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -283,5 +279,4 @@ public class ApiServiceImpl {
             return null;
         }
     }
-
 }
