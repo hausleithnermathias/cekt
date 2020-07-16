@@ -1,5 +1,6 @@
 package at.itproject.core;
 
+import at.itproject.api.ApiController;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HistoryApi;
 import io.swagger.client.api.PrintJobApi;
@@ -17,10 +18,12 @@ import java.net.InetAddress;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 @Service
 public class ApiServiceImpl {
 
+    Logger logger = Logger.getLogger(ApiServiceImpl.class.getName());
 
     private Calendar calendar=Calendar.getInstance();
     String[] strDays=new String[]{"Sunday","Monday","Tuesday",
@@ -223,10 +226,11 @@ public class ApiServiceImpl {
                     message.setPrintJobHistory(history);
                     restTemplate.postForLocation("https://connector.grandgarage.eu/api/add-metadata", message);
 
+                    logger.info("send history and kill container");
                     // stop container
                     //System.out.println("shutdown finish");
-                    //restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
-                    restTemplate.postForLocation("http://10.5.1.155:8081/api/v1/stop", containerID);
+                    restTemplate.postForLocation("http://10.0.0.42:8081/api/v1/stop", containerID);
+                    //restTemplate.postForLocation("http://10.5.1.155:8081/api/v1/stop", containerID);
 
                 }
             } catch (Exception e) {
@@ -266,9 +270,7 @@ public class ApiServiceImpl {
                 e.printStackTrace();
             }
         }
-
         return "";
-
     }
 
     private List<Head> getHead(PrinterApi printerApi) {
@@ -276,6 +278,7 @@ public class ApiServiceImpl {
         try {
             return printerApi.printerHeadsGet();
         } catch (ApiException e) {
+            logger.warning("get head not possible");
             return null;
         }
     }
